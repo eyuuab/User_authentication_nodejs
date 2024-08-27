@@ -102,3 +102,18 @@ exports.refreshToken = async (req, res) => {
       res.status(401).json({ message: 'Invalid refresh token' });
     }
 }  
+
+exports.verifyToken = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: 'Token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ valid: true, userId: decoded.userId });
+  } catch (error) {
+    res.json({ valid: false });
+  }
+};
