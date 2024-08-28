@@ -1,72 +1,80 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-const AuthContext = createContext();
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [auth, setAuth] = useState(() => {
+    const storedAuth = localStorage.getItem('auth');
+    return storedAuth ? JSON.parse(storedAuth) : null;
+  });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      fetchUser();
+    if (auth) {
+      localStorage.setItem('auth', JSON.stringify(auth));
+      axios.defaults.headers.common['Authorization'] = `Bearer ${auth.accessToken}`;
     } else {
-      setLoading(false);
+      localStorage.removeItem('auth');
+      delete axios.defaults.headers.common['Authorization'];
     }
-  }, []);
+    setLoading(false);
+  }, [auth]);
 
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/users/profile');
-      setUser(response.data);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      logout(); // Clear invalid token
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email, password) => {
-    try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', { email, password });
-      localStorage.setItem('token', response.data.token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-      await fetchUser();
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
-  };
-
-  const register = async (name, email, password) => {
-    try {
-      await axios.post('http://localhost:3000/api/auth/register', { name, email, password });
-      return true;
-    } catch (error) {
-      console.error('Registration error:', error);
-      return false;
-    }
+  const login = (authData) => {
+    setAuth(authData);
+    localStorage.setItem('refreshToken', authData.refreshToken);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
-    setUser(null);
+    setAuth(null);
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('auth');
   };
 
-  const value = {
-    user,
-    loading,
-    login,
-    register,
-    logout,
+  const refreshToken = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      logout();
+      return false;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:4000/api/auth/refresh', { refreshToken });
+      if (response.status === 200) {
+        const { accessToken } = response.data;
+        setAuth(prevAuth => ({ ...prevAuth, accessToken }));
+        return true;
+      }
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      logout();
+    }
+    return false;
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const verifyToken = async (token) => {
+    try {
+      const response = await axios.post('http://localhost:4000/api/auth/verify', { token });
+      return response.data.valid;
+    } catch (error) {
+      console.error('Failed to verify token:', error);
+      return false;
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ auth, login, logout, refreshToken, verifyToken, loading, user: auth?.user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -62,17 +62,25 @@ const Register = () => {
           email: formData.email,
           password: formData.password
         });
-        if (response.data.success) {
+        
+        if (response.status === 201) {
           navigate('/login', { state: { message: 'Registration successful. Please log in.' } });
         } else {
-          setServerError('Registration failed. Please try again.');
+          setServerError('Unexpected response from server. Please try again.');
         }
       } catch (error) {
-        if (error.response && error.response.data && error.response.data.message) {
-          setServerError(error.response.data.message);
+        if (error.response) {
+          if (error.response.status === 400) {
+            setServerError(error.response.data.message || 'User already exists.');
+          } else {
+            setServerError(error.response.data.message || 'An error occurred. Please try again later.');
+          }
+        } else if (error.request) {
+          setServerError('No response from server. Please check your connection and try again.');
         } else {
           setServerError('An error occurred. Please try again later.');
         }
+        console.error('Registration error:', error);
       } finally {
         setIsLoading(false);
       }
