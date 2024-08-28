@@ -1,26 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../utils/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      await login(email, password);
-      navigate('/profile');
+      const success = await login(email, password);
+      if (success) {
+        navigate('/profile');
+      } else {
+        setError('Invalid email or password');
+      }
     } catch (error) {
-      console.error('Login failed:', error);
+      setError('An error occurred. Please try again.');
     }
   };
 
   return (
     <div className="container mx-auto mt-8">
       <h1 className="text-3xl font-bold mb-4">Login</h1>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleSubmit} className="max-w-md">
         <div className="mb-4">
           <label htmlFor="email" className="block mb-2">Email</label>

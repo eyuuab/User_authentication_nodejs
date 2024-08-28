@@ -1,16 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../utils/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
-const Navbar = () => {
-  const { isAuthenticated, logout } = useAuth();
+const Navigation = () => {
+  const { user, logout } = useAuth();
 
   return (
     <nav className="bg-gray-800 p-4">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="text-white text-xl font-bold">Auth Demo</Link>
         <div>
-          {isAuthenticated ? (
+          {user ? (
             <>
               <Link to="/profile" className="text-white mr-4">Profile</Link>
               <button onClick={logout} className="text-white">Logout</button>
@@ -27,4 +27,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Navigation;
