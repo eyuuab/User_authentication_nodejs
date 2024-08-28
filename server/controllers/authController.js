@@ -22,6 +22,7 @@ exports.register = async (req, res) => {
     await user.save();
 
     res.status(201).json({ message: 'User registered successfully' });
+    console.log('User registered successfully');
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -60,6 +61,7 @@ exports.login = async (req, res) => {
                 email: user.email,
             },
         })
+        console.log('User logged in successfully');
     }catch(error){
         console.error(error);
         res.status(500).json({ message: 'Server error' });
@@ -98,6 +100,7 @@ exports.refreshToken = async (req, res) => {
       );
   
       res.json({ accessToken });
+      console.log('Access token refreshed');
     } catch (error) {
       res.status(401).json({ message: 'Invalid refresh token' });
     }
@@ -113,6 +116,7 @@ exports.verifyToken = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     res.json({ valid: true, userId: decoded.userId });
+    console.log('Token verified');
   } catch (error) {
     res.json({ valid: false });
   }
