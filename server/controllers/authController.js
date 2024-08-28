@@ -8,7 +8,9 @@ exports.register = async (req, res) => {
 
     let user = await User.findOne({ email });
     if (user) {
+      console.log('User already exists');
       return res.status(400).json({ message: 'User already exists' });
+      
     }
     user = new User({
       name,
@@ -26,6 +28,7 @@ exports.register = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
+    console.log('Server error');
   }
 };
 
@@ -52,7 +55,7 @@ exports.login = async (req, res) => {
                 process.env.JWT_REFRESH_SECRET,
                 { expiresIn: '7d' }
             );
-        res.json({
+          res.status(201).json({
             accessToken,
             refreshToken,
             user: {
@@ -65,6 +68,7 @@ exports.login = async (req, res) => {
     }catch(error){
         console.error(error);
         res.status(500).json({ message: 'Server error' });
+
     }
 }
 
