@@ -1,0 +1,3 @@
+[submodule "auth-frontend"]
+	path = auth-frontend
+	url = https://github.com/eyuuab/User_authentication_nodejs.git
